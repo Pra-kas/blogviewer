@@ -1,8 +1,8 @@
+import 'package:blog/model/api_model.dart';
 import 'package:flutter/material.dart';
 
 class BlogDetailView extends StatelessWidget {
-  final dynamic blog;
-
+  final Blog blog;
   const BlogDetailView({super.key, required this.blog});
 
   @override
@@ -13,7 +13,7 @@ class BlogDetailView extends StatelessWidget {
         leading: const BackButton(
           color: Colors.white,
         ),
-        title: Text(blog['title'],
+        title: Text(blog.title,
         style: const TextStyle(
           color: Colors.white
         ),),
@@ -24,7 +24,7 @@ class BlogDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Image.network(
-              blog['image_url'],
+              blog.imageUrl,
               width: double.infinity,
               height: 250.0,
               fit: BoxFit.cover,
@@ -32,7 +32,7 @@ class BlogDetailView extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                blog['title'],
+                blog.title,
                 style: const TextStyle(
                   fontSize: 24.0,
                   color: Colors.white,

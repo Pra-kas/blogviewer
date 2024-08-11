@@ -4,3 +4,10 @@ part of 'blog_bloc.dart';
 sealed class BlogEvent {}
 
 class BlogGetEvent extends BlogEvent {}
+
+class FavoriteClicked extends BlogEvent {
+  final bool click;
+  FavoriteClicked({required this.click});
+}
+
+class FavoritePageClikedEvent extends BlogEvent {}
