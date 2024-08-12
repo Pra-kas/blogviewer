@@ -1,6 +1,6 @@
 import 'package:blog/model/api_model.dart';
-import 'package:blog/service/local_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FavouriteBlog extends StatefulWidget {
   @override
@@ -23,14 +23,23 @@ class _FavouriteBlogState extends State<FavouriteBlog> {
     });
   }
 
+  Future<void> removeFavoriteBlog(Blog blog) async {
+    await deleteFavoriteBlog(blog);
+    loadFavoriteBlogs();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         centerTitle: true,
-        leading: BackButton(color: Colors.white,
-        onPressed: () => Navigator.pop(context),),
+        leading: BackButton(
+          color: Colors.white,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         title: const Text("Favourites", style: TextStyle(color: Colors.white)),
         forceMaterialTransparency: true,
       ),
@@ -45,7 +54,12 @@ class _FavouriteBlogState extends State<FavouriteBlog> {
               itemCount: favBlogs.length,
               itemBuilder: (context, index) {
                 final blog = favBlogs[index];
-                return BlogCard(blog: blog);
+                return BlogCard(
+                  blog: blog,
+                  onRemove: () {
+                    removeFavoriteBlog(blog);
+                  }, // Pass the removal function
+                );
               },
             ),
     );
@@ -54,8 +68,10 @@ class _FavouriteBlogState extends State<FavouriteBlog> {
 
 class BlogCard extends StatefulWidget {
   final Blog blog;
+  final VoidCallback onRemove;
 
-  const BlogCard({Key? key, required this.blog}) : super(key: key);
+  const BlogCard({Key? key, required this.blog, required this.onRemove})
+      : super(key: key);
 
   @override
   _BlogCardState createState() => _BlogCardState();
@@ -73,17 +89,28 @@ class _BlogCardState extends State<BlogCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Full-width image
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(15.0),
-            ),
-            child: Image.network(
-              widget.blog.imageUrl,
-              width: double.infinity,
-              height: 180.0,
-              fit: BoxFit.cover,
-            ),
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(15.0),
+                ),
+                child: Image.network(
+                  widget.blog.imageUrl,
+                  width: double.infinity,
+                  height: 180.0,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned(
+                top: 10.0,
+                right: 10.0,
+                child: IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: widget.onRemove,
+                ),
+              ),
+            ],
           ),
           Padding(
             padding: const EdgeInsets.all(10.0),
@@ -101,4 +128,19 @@ class _BlogCardState extends State<BlogCard> {
       ),
     );
   }
+}
+
+Future<void> deleteFavoriteBlog(Blog blog) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  List<String>? favBlogs = prefs.getStringList('favoriteBlogs') ?? [];
+  favBlogs.remove(blog.toJson());
+  await prefs.setStringList('favoriteBlogs', favBlogs);
+}
+
+Future<List<Blog>> getFavoriteBlogs() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  List<String>? favBlogs = prefs.getStringList('favoriteBlogs') ?? [];
+  return favBlogs
+      .map((json) => Blog.fromJson(json))
+      .toList(); // Assuming `Blog` class has `fromJson` method
 }

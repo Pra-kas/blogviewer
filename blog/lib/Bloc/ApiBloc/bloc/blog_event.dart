@@ -6,8 +6,8 @@ sealed class BlogEvent {}
 class BlogGetEvent extends BlogEvent {}
 
 class FavoriteClicked extends BlogEvent {
-  final bool click;
-  FavoriteClicked({required this.click});
+  final bool isFavorite;
+  FavoriteClicked({required this.isFavorite});
 }
 
 class FavoritePageClikedEvent extends BlogEvent {}

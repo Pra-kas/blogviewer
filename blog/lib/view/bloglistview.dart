@@ -15,26 +15,40 @@ class BlogListView extends StatefulWidget {
 
 class _BlogListViewState extends State<BlogListView> {
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    setState(() {
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => BlogBloc()..add(BlogGetEvent()),
       child: BlocBuilder<BlogBloc, BlogState>(
         builder: (context, state) {
-          const CircularProgressIndicator();
           if (state is BlogEventSuccessState) {
-            return blogView(context, state.data);
-          }
-          else if(state is BlogLoadingState){
+            return BlogView(blogs: state.data);
+          } else if (state is BlogLoadingState) {
             return const Center(child: CircularProgressIndicator());
           }
           return const Scaffold(
+            backgroundColor: Colors.black,
             body: Center(
               child: SizedBox(
                 width: 400,
                 height: 400,
                 child: Card(
-                  child: Center(child: Text("Error getting API response"))),
-              )),
+                  color: Colors.black,
+                  child: Center(
+                    child: Text(
+                      "Error getting API response",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           );
         },
       ),
@@ -42,34 +56,49 @@ class _BlogListViewState extends State<BlogListView> {
   }
 }
 
-Widget blogView(BuildContext context, List<Blog> blogs) {
-  return Scaffold(
-    backgroundColor: Colors.black,
-    appBar: AppBar(
-      backgroundColor: Colors.black,
-      title: const Text(
-        'Blogs and Articles',
-        style: TextStyle(color: Colors.white),
-      ),
-      centerTitle: true,
-      actions: [
-        IconButton(
-          color: Colors.white,
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => FavouriteBlog()));
-          }, icon: const Icon(Icons.star_outlined))
-      ],
-    ),
-    body: ListView.builder(
-      itemCount: blogs.length,
-      itemBuilder: (context, index) {
-        final blog = blogs[index];
-        return BlogCard(blog: blog);
-      },
-    ),
-  );
+class BlogView extends StatefulWidget {
+  final List<Blog> blogs;
+  const BlogView({super.key, required this.blogs});
+
+  @override
+  State<BlogView> createState() => _BlogViewState();
 }
 
+class _BlogViewState extends State<BlogView> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: const Text(
+          'Blogs and Articles',
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+      ),
+      body: ListView.builder(
+        itemCount: widget.blogs.length,
+        itemBuilder: (context, index) {
+          final blog = widget.blogs[index];
+          return BlogCard(blog: blog);
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.yellow,
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => FavouriteBlog()),
+          );
+          setState(() {
+          });
+        },
+        child: const Icon(Icons.star),
+      ),
+    );
+  }
+}
 
 class BlogCard extends StatefulWidget {
   final Blog blog;
@@ -86,34 +115,32 @@ class _BlogCardState extends State<BlogCard> {
   @override
   void initState() {
     super.initState();
-    isFavorite = widget.blog.isFavorite;
+    _loadFavoriteStatus();
+  }
+
+  Future<void> _loadFavoriteStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? favBlogs = prefs.getStringList('favoriteBlogs') ?? [];
+    setState(() {
+      isFavorite = favBlogs.contains(widget.blog.toJson());
+    });
   }
 
   Future<void> _toggleFavorite() async {
-    setState(() {
-      isFavorite = !isFavorite;
-    });
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? favBlogs = prefs.getStringList('favoriteBlogs') ?? [];
 
-    widget.blog.isFavorite = isFavorite;
     if (isFavorite) {
-      await saveFavoriteBlog(widget.blog);
+      favBlogs?.remove(widget.blog.toJson());
     } else {
-      await removeFavoriteBlog(widget.blog);
+      favBlogs?.add(widget.blog.toJson());
     }
-  }
 
-  Future<void> saveFavoriteBlog(Blog blog) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? favBlogs = prefs.getStringList('favoriteBlogs') ?? [];
-    favBlogs.add(blog.toJson());
     await prefs.setStringList('favoriteBlogs', favBlogs);
-  }
 
-  Future<void> removeFavoriteBlog(Blog blog) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? favBlogs = prefs.getStringList('favoriteBlogs') ?? [];
-    favBlogs.remove(blog.toJson());
-    await prefs.setStringList('favoriteBlogs', favBlogs);
+    setState(() {
+      widget.blog.isFavorite = !widget.blog.isFavorite;
+    });
   }
 
   @override
@@ -168,8 +195,8 @@ class _BlogCardState extends State<BlogCard> {
               right: 10.0,
               child: IconButton(
                 icon: Icon(
-                  isFavorite ? Icons.star : Icons.star_border,
-                  color: isFavorite ? Colors.yellow : Colors.white,
+                  widget.blog.isFavorite ? Icons.star : Icons.star_border,
+                  color: widget.blog.isFavorite ? Colors.yellow : const Color.fromARGB(255, 126, 100, 100),
                 ),
                 onPressed: _toggleFavorite,
               ),

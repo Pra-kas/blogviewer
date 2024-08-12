@@ -16,8 +16,8 @@ class BlogEventFailureState extends BlogState {
 }
 
 class FavoriteClickedState extends BlogState {
-  final bool click;
-  FavoriteClickedState({required this.click});
+  final bool isFavorite;
+  FavoriteClickedState({required this.isFavorite});
 }
 
 class BlogLoadingState extends BlogState {}
